@@ -77,25 +77,49 @@ var ficheroDesc={
     {tam:12,desc:"TOTALIVANAP"}
   ]
 }
-var numConceptos=10; //numero de conceptos en el fichero de Facsa
+var numConceptos=10; //numero de conceptos en el fichero de Facsa (puede cambiar).
+var negativosFinal=0;
 
-var cadena0="043201802000438B45653581           INVERSIONES FUENSALPER                            AVDA SAN CRISPIN              00124--LOC.-2                 45510FUENSALIDA               TOLEDO                   +000000017914NT20180731                  1489-0100999                                                                                                                                                      0000 0000000000000000000000000000 0000000000000000000000000083+0000000002160000000000220000 0000000000000000000000000085+0000000085300000000008530004+0000000002880000000000600070+0000000008880000000000000071+0000000051350000000000000079+0000000002160000000000000080+000000001706000000000000+000000000288000000000060+000000008746000000000875+000000007945000000000000";
-var cadena1="043201703000063B45619616           ACTIVOS INMOBILIARIOS 2.006 S.L.                  AVDA SAN CRISPIN              00044--                       45510FUENSALIDA               TOLEDO                   +000000002569NT201801151489-0007536                                                                                                                                                                        0029+0000000013000000000001300030+0000000002160000000000220047-0000000015160000000001520004+0000000002880000000000600070+0000000008880000000000000071+0000000009220000000000000079+0000000002160000000000000080+0000000001950000000000000000 0000000000000000000000000000 000000000000000000000000+000000000288000000000060 000000000000000000000000+000000002221000000000000";
-cadena1="043201703000260A63106157           BUILDINGCENTER, SAU                               CALLE18 DE JULIO              00011--                       45510FUENSALIDA               TOLEDO                   +000000021155NT201801151489-0056771                                                                                                                                                                        0029+0000000106000000000010600030+0000000002160000000000220047-0000000012970000000001300004+0000000008760000000001840070+0000000008880000000000000071+0000000064000000000000000079+0000000002160000000000000080+0000000021200000000000000000 0000000000000000000000000000 000000000000000000000000+000000000876000000000184+000000009519000000000952+000000009624000000000000";
 
-console.log(cadena0.substring(posIniFinTamNom("NOMBRE").ini,posIniFinTamNom("NOMBRE").fin));
-var hayQueTratarLinea=false;
-var cadenaTratada=cadena1;
-for(var i=0;i<numConceptos;i++){
-  var signo=cadenaTratada.substring(posIniFinTamNom("SIGNO"+(i<9?"0":"")+(i+1)).ini,posIniFinTamNom("SIGNO"+(i<9?"0":"")+(i+1)).fin);
-  if (signo=="-"){
-    hayQueTratarLinea=true;
+var ficheroCompleto=fs.readFileSync("fichero.txt","utf8").split("\n");
+
+for (var j=0;j<ficheroCompleto.length;j++){
+
+  var hayQueTratarLinea=false;
+  var cadenaTratada=ficheroCompleto[j];
+  for(var i=0;i<numConceptos;i++){
+    var signo=cadenaTratada.substring(posIniFinTamNom("SIGNO"+(i<9?"0":"")+(i+1)).ini,posIniFinTamNom("SIGNO"+(i<9?"0":"")+(i+1)).fin);
+    if (signo=="-"){
+      hayQueTratarLinea=true;
+    }
   }
-}
-if(hayQueTratarLinea){
-  cadenaTratada=arreglarLinea(cadenaTratada);
+  if(hayQueTratarLinea){
+    cadenaTratada=arreglarLinea(cadenaTratada);
+  }
+  fs.appendFile("ficheroResult.txt", cadenaTratada, (err) => {
+		if (err) {
+			console.error(err);
+			generarError("\nError en linea "+(j+1)+", recibo "+dameValorConcepto("NUMREC")+": "+err);
+			return;
+		};
+	});
+
 }
 
+/**
+ * Genera un fichero ERROR.txt con el mensaje de error
+ * @param {Mensaje de error} error 
+ */
+function generarError(error){ 
+
+	fs.appendFile("Errores.txt", error+"\n", (err) => {
+		if (err) {
+			console.error(err);
+			return;
+		};
+	});
+	
+}
 
 /**
  * Funcion que devuelve en un objeto json la posicion inicial y final de un nombre de variable del fichero pasado
@@ -136,11 +160,19 @@ function arreglarLinea(cadena){
 
   var impTotalAgua=importeAgua-importeNeg;
   var impTotalIva=ivaAgua-ivaNeg;
+  var signo=" "
+  if(impTotalAgua<0){
+    impTotalAgua=impTotalAgua*(-1);
+    impTotalIva=impTotalIva*(-1);
+    signo="-";
+    negativosFinal++;
+    generarError("El recibo "+dameValorConcepto("NUMREC"));
+  }
   console.log("Importe modificado: "+impTotalAgua+"   "+impTotalIva);
   var resultado="";
   if(parseInt(pos47)>parseInt(pos29)){
     resultado=cadena.substring(0,posIniFinTamNom("CPTO"+pos29).ini);
-    resultado+="0029 "+rellenarIzq(impTotalAgua,posIniFinTamNom("BASE"+pos29).tam,"0");
+    resultado+="0029"+signo+rellenarIzq(impTotalAgua,posIniFinTamNom("BASE"+pos29).tam,"0");
     resultado+=rellenarIzq(impTotalIva,posIniFinTamNom("IVA"+pos29).tam,"0");
     resultado+=cadena.substring(posIniFinTamNom("IVA"+pos29).fin,posIniFinTamNom("CPTO"+pos47).ini);
     resultado+="0000 "+rellenarIzq(0,posIniFinTamNom("BASE"+pos47).tam,0)+""+rellenarIzq(0,posIniFinTamNom("IVA"+pos47).tam,0);
@@ -149,10 +181,12 @@ function arreglarLinea(cadena){
     resultado=cadena.substring(0,posIniFinTamNom("CPTO"+pos47).ini);
     resultado+="0000 "+rellenarIzq(0,posIniFinTamNom("BASE"+pos47).tam,0)+""+rellenarIzq(0,posIniFinTamNom("IVA"+pos47).tam,0);
     resultado+=cadena.substring(posIniFinTamNom("IVA"+pos29).fin,posIniFinTamNom("CPTO"+pos47).ini);
-    resultado+="0029 "+rellenarIzq(impTotalAgua,posIniFinTamNom("BASE"+pos29).tam,"0");
+    resultado+="0029"+signo+rellenarIzq(impTotalAgua,posIniFinTamNom("BASE"+pos29).tam,"0");
     resultado+=rellenarIzq(impTotalIva,posIniFinTamNom("IVA"+pos29).tam,"0");
     resultado+=cadena.substring(posIniFinTamNom("IVA"+pos29).fin);
   }
+  console.log("Linea: "+resultado);
+  return resultado;
  
 }
 
