@@ -86,15 +86,15 @@ cadena1="043201703000260A63106157           BUILDINGCENTER, SAU                 
 console.log(cadena0.substring(posIniFinTamNom("NOMBRE").ini,posIniFinTamNom("NOMBRE").fin));
 var hayQueTratarLinea=false;
 var cadenaTratada=cadena1;
-/*for(var i=0;i<numConceptos;i++){
+for(var i=0;i<numConceptos;i++){
   var signo=cadenaTratada.substring(posIniFinTamNom("SIGNO"+(i<9?"0":"")+(i+1)).ini,posIniFinTamNom("SIGNO"+(i<9?"0":"")+(i+1)).fin);
   if (signo=="-"){
     hayQueTratarLinea=true;
   }
-}*/
-//if(hayQueTratarLinea){
-cadenaTratada=arreglarLinea(cadenaTratada);
-//}
+}
+if(hayQueTratarLinea){
+  cadenaTratada=arreglarLinea(cadenaTratada);
+}
 
 
 /**
@@ -114,8 +114,9 @@ function posIniFinTamNom(nombreVariable){
 }
   
 /**
- * 
- * @param {*} cadena 
+ * Recorre la cadena en busca del concepto 47 y se lo resta al concepto 29. Al final el concepto 47 desaparece
+ * de la cadena y se reconstruye toda la línea para que quede con las especificaciones de GIA
+ * @param {Cadena a arreglar} cadena 
  */
 function arreglarLinea(cadena){
 
