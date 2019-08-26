@@ -79,8 +79,9 @@ var ficheroDesc={
 }
 var numConceptos=10; //numero de conceptos en el fichero de Facsa (puede cambiar).
 var negativosFinal=0;
+var totalLineasTratadas=0;
 
-
+generarError("**************INICIO********************");
 var ficheroCompleto=fs.readFileSync("fichero.txt","utf8").split("\n");
 
 for (var j=0;j<ficheroCompleto.length;j++){
@@ -105,6 +106,9 @@ for (var j=0;j<ficheroCompleto.length;j++){
 	});
 
 }
+generarError("***********FIN resumen************");
+generarError("Lineas tratadas: "+totalLineasTratadas);
+generarError("Lineas que han quedado en negativo: "+negativosFinal);
 
 /**
  * Genera un fichero ERROR.txt con el mensaje de error
@@ -168,6 +172,7 @@ function arreglarLinea(cadena){
     negativosFinal++;
     generarError("El recibo "+dameValorConcepto("NUMREC"));
   }
+  totalLineasTratadas++;
   console.log("Importe modificado: "+impTotalAgua+"   "+impTotalIva);
   var resultado="";
   if(parseInt(pos47)>parseInt(pos29)){
